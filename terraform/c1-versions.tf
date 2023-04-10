@@ -1,6 +1,6 @@
 # Terraform block
 terraform {
-  required_version = "~> 1.3.2"
+  required_version = ">= 1.0.0"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -11,7 +11,7 @@ terraform {
     organization = "hcta-demo-3094"
 
     workspaces {
-      name = "terraform-aws-devops-caltech"
+      name = "terraform-final-devops-caltech"
     }
   }
 }

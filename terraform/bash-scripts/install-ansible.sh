@@ -17,7 +17,6 @@ sudo usermod -aG docker ec2-user
 sudo mkdir /opt/docker
 sudo mkdir /opt/k8
 sudo chown ec2-user:ec2-user /opt/docker
-sudo chown ec2-user:ec2-user /opt/k8
 
 # Create Docker file for aetna
 touch /opt/docker/Dockerfile
@@ -40,14 +39,11 @@ sudo echo "[ansible]" > /etc/ansible/hosts
 sudo echo $(sudo hostname -I | awk '{print $1}') >> /etc/ansible/hosts
 sudo echo "[dockerhost]" >> /etc/ansible/hosts
 sudo echo $1 >> /etc/ansible/hosts
-sudo echo "[k8host]" >> /etc/ansible/hosts
-sudo echo $2 >> /etc/ansible/hosts
 
 # Create ssh keys for admin user & copy to docker & k8 VMs
 ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa <<<y >/dev/null 2>&1
 sshpass -p "Secret123" ssh-copy-id -o StrictHostKeyChecking=no ec2-user@$(sudo hostname -I | awk '{print $1}')
 sshpass -p "Secret123" ssh-copy-id -o StrictHostKeyChecking=no ec2-user@$1
-sshpass -p "Secret123" ssh-copy-id -o StrictHostKeyChecking=no ec2-user@$2
 # ansible all -m ping
 
 # Create playbook to create Docker image from war file & push to Docker Hub
@@ -78,24 +74,4 @@ sudo echo "    command: docker rmi -f lucaskienast/aetna:latest" >> /opt/docker/
 sudo echo "    ignore_errors: yes" >> /opt/docker/docker_deploy_aetna.yml
 sudo echo "  - name: create container" >> /opt/docker/docker_deploy_aetna.yml
 sudo echo "    command: docker run -d --rm --name aetna-server -p 8080:8080 lucaskienast/aetna:latest" >> /opt/docker/docker_deploy_aetna.yml
-# ansible-playbook /opt/docker/deploy_aetna.yml
-
-# Create playbook to create k8 deployment on k8 host
-touch /opt/k8/kube_deploy_aetna.yml
-sudo echo "---" >> /opt/k8/kube_deploy_aetna.yml
-sudo echo "- hosts: k8host" >> /opt/k8/kube_deploy_aetna.yml
-sudo echo "  tasks:" >> /opt/k8/kube_deploy_aetna.yml
-sudo echo "  - name: deploy aetna on k8" >> /opt/k8/kube_deploy_aetna.yml
-sudo echo "    command: kubectl apply -f /home/ec2-user/aetna-deployment.yml" >> /opt/k8/kube_deploy_aetna.yml
-# ansible-playbook /opt/k8/kube_deploy_aetna.yml
-
-# Create playbook to create k8 service on k8 host
-touch /opt/k8/kube_service_aetna.yml
-sudo echo "---" >> /opt/k8/kube_service_aetna.yml
-sudo echo "- hosts: k8host" >> /opt/k8/kube_service_aetna.yml
-sudo echo "  tasks:" >> /opt/k8/kube_service_aetna.yml
-sudo echo "  - name: deploy aetna on k8" >> /opt/k8/kube_service_aetna.yml
-sudo echo "    command: kubectl apply -f /home/ec2-user/aetna-service.yml" >> /opt/k8/kube_service_aetna.yml
-sudo echo "  - name: update deployment with new pods if image updated in docker hub" >> /opt/k8/kube_service_aetna.yml
-sudo echo "    command: kubectl rollout restart deployment.apps/lucas-aetna" >> /opt/k8/kube_service_aetna.yml
-# ansible-playbook /opt/k8/kube_service_aetna.yml
+# ansible-playbook /opt/docker/docker_deploy_aetna.yml
